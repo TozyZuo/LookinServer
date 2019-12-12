@@ -82,7 +82,23 @@
     [self.taskPackages removeAllObjects];
 }
 
+static NSDate *__last_dequeueAndHandlePackage;
+static BOOL __isSpringBoard;
+
 - (void)_dequeueAndHandlePackage {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        __last_dequeueAndHandlePackage = NSDate.date;
+        __isSpringBoard = [NSProcessInfo.processInfo.processName isEqualToString:@"SpringBoard"];
+    });
+    if (__isSpringBoard) {
+        if ([[NSDate date] timeIntervalSinceDate:__last_dequeueAndHandlePackage] < 1) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self _dequeueAndHandlePackage];
+            });
+            return;
+        }
+    }
     dispatch_async(dispatch_get_main_queue(), ^{
         LookinStaticAsyncUpdateTasksPackage *package = self.taskPackages.firstObject;
         if (!package) {
@@ -121,6 +137,8 @@
         self.handlerBlock(details, nil);
         
         [self.taskPackages removeObjectAtIndex:0];
+        
+        __last_dequeueAndHandlePackage = NSDate.date;
         [self _dequeueAndHandlePackage];
     });
 }

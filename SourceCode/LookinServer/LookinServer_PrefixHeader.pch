@@ -6,6 +6,8 @@
 //  https://lookin.work
 //
 
+#define CAN_COMPILE_LOOKIN_SERVER
+
 #import "TargetConditionals.h"
 #import "LookinDefines.h"
 #import "LKS_Helper.h"
